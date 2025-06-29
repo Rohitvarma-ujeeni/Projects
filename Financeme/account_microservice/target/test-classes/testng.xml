@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Account Test Suite">
+    <test name="Account Controller Test">
+        <classes>
+            <class name="com.ABCD.controller.AccountControllerTest"/>
+        </classes>
+    </test>
+</suite>
