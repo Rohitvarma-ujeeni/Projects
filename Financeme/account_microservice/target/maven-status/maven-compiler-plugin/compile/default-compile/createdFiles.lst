@@ -1,5 +1,0 @@
-com/ABCD/account/entity/Account.class
-com/ABCD/account/controller/AccountController.class
-com/ABCD/account/service/AccountService.class
-com/ABCD/account/repository/AccountRepository.class
-com/ABCD/account/AccountMicroserviceApplication.class
