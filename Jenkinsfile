@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/Rohitvarma-ujeeni/bank_finance.git', branch: 'master'
+                git url: 'https://github.com/Rohitvarma-ujeeni/Projects.git', branch: 'master'
             }
         }
 
