@@ -191,6 +191,28 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
                 junit '**/target/surefire-reports/*.xml'
             }
         }
+        stage('Update prometheus.yml on Slave1') {
+            steps {
+                script {
+                    def instanceIP = sh(script: 'terraform -chdir=terraform/prod output -raw instance_ip', returnStdout: true).trim()
+                    def prometheusConfig = """
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'node_exporter_prod'
+    static_configs:
+      - targets: ['${instanceIP}:9100']
+"""
+
+                    sh """
+                    echo "${prometheusConfig.stripIndent()}" | sudo tee /etc/prometheus/prometheus.yml > /dev/null
+                    sudo systemctl restart prometheus
+                    """
+                }
+            }
+        }
     }
 
     post {
