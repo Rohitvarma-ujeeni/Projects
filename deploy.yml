@@ -2,6 +2,7 @@
 - name: Configure Environment
   hosts: all
   become: yes
+  become_user: root
   vars:
     image: ""
     ansible_python_interpreter: /usr/bin/python3
