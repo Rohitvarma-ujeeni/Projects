@@ -32,7 +32,7 @@ pipeline {
             }
         }
 
-        // ---------- DEV ENV ----------
+        // ---------- DEV ----------
 
         stage('Provision Dev Infra') {
             steps {
@@ -49,7 +49,7 @@ pipeline {
                         '''
                     }
                 }
-                sleep(time: 59, unit: 'SECONDS')
+                sleep(time: 60, unit: 'SECONDS')
             }
         }
 
@@ -63,13 +63,35 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
 """
                     writeFile file: 'inventory_dev.ini', text: inventory
                 }
-                sleep(time: 30, unit: 'SECONDS')
             }
         }
 
         stage('Configure Dev Server') {
             steps {
                 sh 'ansible-playbook -i inventory_dev.ini playbook.yml'
+            }
+        }
+
+        stage('Reboot Dev Agent') {
+            steps {
+                echo "Rebooting Dev agent..."
+                sh 'sudo reboot &'
+            }
+        }
+
+        stage('Wait for Dev Agent Reconnect') {
+            agent none
+            steps {
+                echo "Waiting 60 seconds for Dev agent to reboot..."
+                sleep(time: 60, unit: 'SECONDS')
+            }
+        }
+
+        stage('Resume Dev Work') {
+            agent { label 'Project_Slave1' }
+            steps {
+                echo "Dev agent is back online."
+                sh 'docker ps'
             }
         }
 
@@ -109,7 +131,7 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
                         '''
                     }
                 }
-                sleep(time: 59, unit: 'SECONDS')
+                sleep(time: 60, unit: 'SECONDS')
             }
         }
 
@@ -123,13 +145,35 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
 """
                     writeFile file: 'inventory_stage.ini', text: inventory
                 }
-                sleep(time: 30, unit: 'SECONDS')
             }
         }
 
         stage('Configure Stage Server') {
             steps {
                 sh 'ansible-playbook -i inventory_stage.ini playbook.yml'
+            }
+        }
+
+        stage('Reboot Stage Agent') {
+            steps {
+                echo "Rebooting Stage agent..."
+                sh 'sudo reboot &'
+            }
+        }
+
+        stage('Wait for Stage Agent Reconnect') {
+            agent none
+            steps {
+                echo "Waiting 60 seconds for Stage agent to reboot..."
+                sleep(time: 60, unit: 'SECONDS')
+            }
+        }
+
+        stage('Resume Stage Work') {
+            agent { label 'Project_Slave1' }
+            steps {
+                echo "Stage agent is back online."
+                sh 'docker ps'
             }
         }
 
@@ -176,13 +220,35 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
 """
                     writeFile file: 'inventory_prod.ini', text: inventory
                 }
-                sleep(time: 30, unit: 'SECONDS')
             }
         }
 
         stage('Configure Prod Server') {
             steps {
                 sh 'ansible-playbook -i inventory_prod.ini playbook.yml'
+            }
+        }
+
+        stage('Reboot Prod Agent') {
+            steps {
+                echo "Rebooting Prod agent..."
+                sh 'sudo reboot &'
+            }
+        }
+
+        stage('Wait for Prod Agent Reconnect') {
+            agent none
+            steps {
+                echo "Waiting 60 seconds for Prod agent to reboot..."
+                sleep(time: 60, unit: 'SECONDS')
+            }
+        }
+
+        stage('Resume Prod Work') {
+            agent { label 'Project_Slave1' }
+            steps {
+                echo "Prod agent is back online."
+                sh 'docker ps'
             }
         }
 
