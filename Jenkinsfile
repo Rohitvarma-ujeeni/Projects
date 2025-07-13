@@ -64,6 +64,7 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
                     writeFile file: 'inventory_dev.ini', text: inventory
                 }
             }
+            sleep(time: 30, unit: 'SECONDS')
         }
 
         stage('Configure Dev Server') {
