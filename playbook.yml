@@ -1,21 +1,22 @@
 ---
-- name: Configure EC2 Instance for Docker, Ansible, and Monitoring
+- name: Configure EC2 Instance for Docker, Ansible, and Monitoring (Simple)
   hosts: all
   become: yes
-  vars:
-    python_venv_path: /opt/ansible-venv
 
-  pre_tasks:
-    - name: Install base system packages
+  tasks:
+    - name: Update APT package cache
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
       apt:
         name:
           - apt-transport-https
           - ca-certificates
           - curl
           - software-properties-common
+          - python3
           - python3-pip
-          - python3.12-venv
-          - python3-full
           - gnupg
           - lsb-release
         state: present
@@ -25,24 +26,7 @@
       apt:
         name: ansible
         state: present
-        update_cache: yes
 
-    - name: Create Python virtual environment
-      command: "python3 -m venv {{ python_venv_path }}"
-      args:
-        creates: "{{ python_venv_path }}/bin/activate"
-
-    - name: Install Docker SDK in virtualenv
-      command: "{{ python_venv_path }}/bin/pip install docker"
-      environment:
-        PIP_BREAK_SYSTEM_PACKAGES: "1"
-
-    - name: Set Python interpreter for Ansible
-      set_fact:
-        ansible_python_interpreter: "{{ python_venv_path }}/bin/python"
-        DOCKER_HOST: "unix://var/run/docker.sock"
-
-  tasks:
     - name: Add Docker GPG key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
@@ -74,38 +58,43 @@
         groups: docker
         append: yes
 
-    - name: Install community.docker collection
-      ansible.builtin.command:
-        cmd: ansible-galaxy collection install community.docker
+    - name: Install Docker Python SDK globally (system-wide)
+      pip:
+        name: docker
+        executable: pip3
+
+    - name: Install community.docker Ansible collection
+      command: ansible-galaxy collection install community.docker
+      args:
         creates: /root/.ansible/collections/ansible_collections/community/docker
 
-    # Setup Prometheus Node Exporter
-    - name: Create /opt directory if not exists
+    # Node Exporter setup
+    - name: Create /opt directory
       file:
         path: /opt
         state: directory
         mode: '0755'
 
-    - name: Download Node Exporter v1.7.0
+    - name: Download Node Exporter
       get_url:
         url: https://github.com/prometheus/node_exporter/releases/download/v1.7.0/node_exporter-1.7.0.linux-amd64.tar.gz
         dest: /opt/node_exporter-1.7.0.linux-amd64.tar.gz
         mode: '0644'
 
-    - name: Extract Node Exporter archive
+    - name: Extract Node Exporter
       unarchive:
         src: /opt/node_exporter-1.7.0.linux-amd64.tar.gz
         dest: /opt/
         remote_src: yes
 
-    - name: Move Node Exporter binary to /usr/local/bin
+    - name: Move Node Exporter binary
       copy:
         src: /opt/node_exporter-1.7.0.linux-amd64/node_exporter
         dest: /usr/local/bin/node_exporter
         mode: '0755'
         remote_src: yes
 
-    - name: Create systemd service file for Node Exporter
+    - name: Create Node Exporter systemd service
       copy:
         dest: /etc/systemd/system/node_exporter.service
         content: |
@@ -121,7 +110,7 @@
           WantedBy=default.target
         mode: '0644'
 
-    - name: Reload systemd and start Node Exporter
+    - name: Enable and start Node Exporter
       systemd:
         name: node_exporter
         enabled: yes
