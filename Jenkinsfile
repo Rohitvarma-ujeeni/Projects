@@ -68,7 +68,12 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
 
         stage('Configure Dev Server') {
             steps {
-                sh 'ansible-playbook -i inventory_dev.ini playbook.yml'
+                sh '''
+                    ansible-playbook -i inventory_dev.ini playbook.yml
+                    sudo usermod -aG docker ubuntu
+                    newgrp docker || true
+                    sudo chmod 666 /var/run/docker.sock
+                  '''
             }
         }
 
