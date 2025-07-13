@@ -7,6 +7,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/Rohitvarma-ujeeni/Projects.git', branch: 'master'
@@ -41,8 +42,8 @@ pipeline {
                 ]) {
                     dir('terraform/dev') {
                         sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
                             terraform init
                             terraform apply -auto-approve
                         '''
@@ -56,10 +57,11 @@ pipeline {
             steps {
                 script {
                     def instanceIP = sh(script: 'terraform -chdir=terraform/dev output -raw instance_ip', returnStdout: true).trim()
-                    writeFile file: 'inventory_dev.ini', text: """
+                    def inventory = """
 [dev]
 ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 """
+                    writeFile file: 'inventory_dev.ini', text: inventory
                 }
             }
         }
@@ -99,8 +101,8 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
                 ]) {
                     dir('terraform/stage') {
                         sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
                             terraform init
                             terraform apply -auto-approve
                         '''
@@ -114,10 +116,11 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
             steps {
                 script {
                     def instanceIP = sh(script: 'terraform -chdir=terraform/stage output -raw instance_ip', returnStdout: true).trim()
-                    writeFile file: 'inventory_stage.ini', text: """
+                    def inventory = """
 [stage]
 ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 """
+                    writeFile file: 'inventory_stage.ini', text: inventory
                 }
             }
         }
@@ -150,8 +153,8 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
                 ]) {
                     dir('terraform/prod') {
                         sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
                             terraform init
                             terraform apply -auto-approve
                         '''
@@ -165,10 +168,11 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
             steps {
                 script {
                     def instanceIP = sh(script: 'terraform -chdir=terraform/prod output -raw instance_ip', returnStdout: true).trim()
-                    writeFile file: 'inventory_prod.ini', text: """
+                    def inventory = """
 [prod]
 ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 """
+                    writeFile file: 'inventory_prod.ini', text: inventory
                 }
             }
         }
@@ -191,9 +195,11 @@ ${instanceIP} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_ecdsa a
                 junit '**/target/surefire-reports/*.xml'
             }
         }
+    }
 
     post {
         always {
+            echo "Cleaning workspace..."
             cleanWs()
         }
     }
